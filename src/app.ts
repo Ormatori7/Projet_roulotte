@@ -1,7 +1,7 @@
 import express from "express";
 import type { Container } from "./container.js";
 import { authErrorHandler, installSecurity } from "./fourni/auth/index.js";
-import { errorHandler, notFoundHandler } from "./shared/errors.js";
+import { errorHandler, notFoundHandler } from "./shared/errors";
 
 export function createApp(container: Container) {
   const app = express();
