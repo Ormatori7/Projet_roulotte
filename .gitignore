@@ -1,0 +1,9 @@
+node_modules
+.env
+*.db
+*.db-journal
+src/generated
+
+.agents
+.claude
+.windsurf
