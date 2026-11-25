@@ -1,5 +1,5 @@
-import { createApp } from "./app.ts";
-import { createContainer } from "./container.ts";
+import { createApp } from "./app";
+import { createContainer } from "./container";
 
 const container = createContainer();
 const app = createApp(container);
