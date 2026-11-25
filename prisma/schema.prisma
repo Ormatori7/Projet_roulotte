@@ -1,13 +1,117 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
 }
 
+// Prisma 7 : l'URL de la base est dans prisma.config.ts
 datasource db {
   provider = "sqlite"
+}
+
+enum Role {
+  CUSTOMER
+  STAFF
+  ADMIN
+}
+
+enum OrderStatus {
+  RECEIVED
+  PREPARING
+  READY
+  PICKED_UP
+  CANCELLED
+}
+
+// Palier 4 : à décommenter avec le champ paymentStatus de Order
+// enum PaymentStatus {
+//   UNPAID
+//   PAID
+// }
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(CUSTOMER)
+  createdAt    DateTime @default(now())
+
+  orders Order[] // 1-n : un utilisateur a plusieurs commandes
+}
+
+model Category {
+  id       Int    @id @default(autoincrement())
+  name     String @unique
+  position Int
+
+  dishes Dish[] // 1-n : une catégorie contient plusieurs plats
+}
+
+model Allergen {
+  id    Int    @id @default(autoincrement())
+  code  String @unique // ex. "gluten"
+  label String
+
+  dishes Dish[] // n-n implicite : Prisma crée la table de jointure
+}
+
+model Dish {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String
+  priceCents  Int
+  available   Boolean @default(true)
+
+  // Palier 2 (migration "stock") : null = stock illimité
+  // stock Int?
+
+  // Palier 3 (migration "image")
+  // imageUrl String?
+
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  allergens  Allergen[] // n-n implicite
+  orderItems OrderItem[]
+
+  @@index([categoryId])
+}
+
+model Order {
+  id         Int         @id @default(autoincrement())
+  status     OrderStatus @default(RECEIVED)
+  note       String?
+  totalCents Int
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  // Palier 4 (migration "payment")
+  // paymentStatus PaymentStatus @default(UNPAID)
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  items OrderItem[] // 1-n : les lignes de la commande
+
+  @@index([userId])
+  @@index([status])
+}
+
+// n-n explicite entre Order et Dish : la jointure porte des données
+model OrderItem {
+  orderId Int
+  dishId  Int
+
+  quantity       Int
+  unitPriceCents Int // prix figé le jour de la commande
+
+  // Supprimer une commande supprime ses lignes
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  // Restrict : impossible de supprimer un plat déjà commandé
+  dish Dish @relation(fields: [dishId], references: [id], onDelete: Restrict)
+
+  // Clé composite : jamais deux fois le même plat dans une commande
+  @@id([orderId, dishId])
+  @@index([dishId])
 }
