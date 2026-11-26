@@ -2,6 +2,7 @@ import express from "express";
 import type { Container } from "./container.js";
 import { authErrorHandler, installSecurity } from "./fourni/auth/index.js";
 import { errorHandler, notFoundHandler } from "./shared/errors";
+import { createMenuRouter } from "./modules/menu/menu.routes.js";
 
 export function createApp(container: Container) {
   const app = express();
@@ -14,8 +15,9 @@ export function createApp(container: Container) {
     res.json({ status: "ok" });
   });
   app.use("/auth", container.auth.router);
-  // Les routes menu et orders viendront ici
-
+  app.use(createMenuRouter(container.controllers.menu));
+  // les routes orders seront ici
+  
   // Aucune route n'a répondu : 404
   app.use(notFoundHandler);
 
