@@ -12,6 +12,7 @@ export function createOrderRouter(controller: OrderController, auth: Auth) {
     router.post("/", controller.place);
     router.get("/", controller.list);
     router.get("/:id", controller.getOne);
+    router.get("/:id/status", controller.changeStatus);
 
     return router;
 }
