@@ -37,7 +37,6 @@ function createTestApp() {
     },
     findById: async () => null,
     list: async () => ({ items: [], total: 0 }),
-    updateStatus: async () => null,
   };
   const container: Container = {
     config,
@@ -87,5 +86,70 @@ describe("Routes du menu", () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("VALIDATION_ERROR");
+  });
+  // . Fabrique un token JWT pour un rôle (même secret que l'application de test)
+  function tokenFor(role: "CUSTOMER" | "STAFF" | "ADMIN") {
+    return `Bearer ${signToken({ id: 1, role }, "secret-de-test-assez-long", "2h")}`;
+  }
+
+  describe("Routes admin des plats (palier 2)", () => {
+    const app = createTestApp();
+    const body = { name: "Tarte du jour", priceCents: 500, categoryId: 1 };
+
+    it("POST /dishes sans token → 401 UNAUTHORIZED", async () => {
+      const res = await request(app).post("/dishes").send(body);
+
+      expect(res.status).toBe(401);
+      expect(res.body.error.code).toBe("UNAUTHORIZED");
+    });
+
+    it("POST /dishes avec un compte client → 403 FORBIDDEN", async () => {
+      const res = await request(app)
+        .post("/dishes")
+        .set("Authorization", tokenFor("CUSTOMER"))
+        .send(body);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error.code).toBe("FORBIDDEN");
+    });
+
+    it("POST /dishes en admin → 201 + Location", async () => {
+      const res = await request(app)
+        .post("/dishes")
+        .set("Authorization", tokenFor("ADMIN"))
+        .send(body);
+
+      expect(res.status).toBe(201);
+      expect(res.headers.location).toBe(`/dishes/${res.body.id}`);
+    });
+
+    it("POST /dishes avec un champ inconnu → 400 VALIDATION_ERROR", async () => {
+      const res = await request(app)
+        .post("/dishes")
+        .set("Authorization", tokenFor("ADMIN"))
+        .send({ ...body, promo: true });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("VALIDATION_ERROR");
+    });
+
+    it("PATCH /dishes/1 avec un corps vide → 400 VALIDATION_ERROR", async () => {
+      const res = await request(app)
+        .patch("/dishes/1")
+        .set("Authorization", tokenFor("ADMIN"))
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(res.body.error.code).toBe("VALIDATION_ERROR");
+    });
+
+    it("DELETE /dishes/1 en admin → 204 sans corps", async () => {
+      const res = await request(app)
+        .delete("/dishes/1")
+        .set("Authorization", tokenFor("ADMIN"));
+
+      expect(res.status).toBe(204);
+      expect(res.body).toEqual({});
+    });
   });
 });
