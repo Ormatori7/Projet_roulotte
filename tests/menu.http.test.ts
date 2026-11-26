@@ -1,4 +1,4 @@
-// Tests HTTP avec Supertest : la vraie application, avec un faux repository
+// - Tests HTTP avec Supertest : la vraie application, avec un faux repository
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
@@ -8,7 +8,7 @@ import { MenuController } from "../src/modules/menu/menu.controller.js";
 import { MenuService } from "../src/modules/menu/menu.service.js";
 import { fakeMenuRepository, plat } from "./helpers/fake-menu.js";
 
-// Construit une application de test, sans base de données
+// . Construit une application de test, sans base de données
 function createTestApp() {
   const menu = fakeMenuRepository([
     plat(1, "Le Classique"),

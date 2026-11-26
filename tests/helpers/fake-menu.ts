@@ -1,4 +1,4 @@
-// -  repository du menu : respecte l'interface, sans base de données
+// -  repository du menu : respecte l'interface, sans bdd
 import type { Allergen, Category } from "../../src/generated/prisma/client.js";
 import type {
   DishWithRelations,
@@ -8,7 +8,7 @@ import type {
 export const burgers: Category = { id: 1, name: "Burgers", position: 1 };
 export const gluten: Allergen = { id: 1, code: "gluten", label: "Gluten" };
 
-// Fabrique un faux plat
+// . pour fabriquer un faux plat
 export function plat(id: number, name: string): DishWithRelations {
   return {
     id,
@@ -22,7 +22,7 @@ export function plat(id: number, name: string): DishWithRelations {
   };
 }
 
-// Fabrique un faux repository qui contient ces plats
+// . pour fabriquer un faux repository qui contient ces plats
 export function fakeMenuRepository(
   dishes: DishWithRelations[] = [],
 ): MenuRepository {
