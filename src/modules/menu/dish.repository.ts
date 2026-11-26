@@ -1,3 +1,5 @@
+// Accès aux plats. Pour l'instant : seulement ce dont les commandes ont besoin.
+
 import type { PrismaClient } from "../../generated/prisma/client";
 
 // Ce que les commandes ont besoin de savoir sur un plat

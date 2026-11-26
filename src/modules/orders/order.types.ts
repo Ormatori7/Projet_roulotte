@@ -1,3 +1,5 @@
+// Le service et le controller ne dépendent que de ces types
+
 export const ORDER_STATUSES = ["RECEIVED", "PREPARING", "READY", "PICKED_UP", "CANCELLED"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
