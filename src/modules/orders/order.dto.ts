@@ -15,7 +15,7 @@ export function toOrderDto(order: OrderRecord) {
             name: item.dish.name,
             quantity: item.quantity,
             unitPriceCents: item.unitPriceCents,
-            lineTotalcents: item.quantity * item.unitPriceCents,
+            lineTotalCents: item.quantity * item.unitPriceCents,
         }))
     }
 }
