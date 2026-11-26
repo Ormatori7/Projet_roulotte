@@ -21,6 +21,7 @@ export function toDishDto(d: DishWithRelations) {
     description: d.description,
     priceCents: d.priceCents,
     available: d.available,
+    stock: d.stock, // null => illimité
     category: { id: d.category.id, name: d.category.name }, // pas de categoryId
     allergens: d.allergens.map((a) => ({ code: a.code, label: a.label })), // pas d'id
   };

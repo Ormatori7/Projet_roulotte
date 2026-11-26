@@ -39,5 +39,35 @@ export const dishQuerySchema = z.strictObject({
   pageSize: z.coerce.number().int().min(1).max(50).default(20),
 });
 
-//! Le type TypeScript créer à partir du schéma 
+//! Les champs d'un plat (sans valeurs par défaut), règles du contrat DishInput
+const dishFields = {
+  name: z.string().trim().min(2).max(80),
+  description: z.string().max(300),
+  priceCents: z.number().int().min(50).max(10000),
+  categoryId: z.number().int().positive(),
+  allergens: z.array(z.string()), // codes : ["gluten", "lait"]
+  available: z.boolean(),
+  stock: z.number().int().min(0).nullable(), // null = illimité
+};
+
+//! POST /dishes → name, priceCents, categoryId obligatoires, le reste a une valeur par défaut
+export const createDishSchema = z.strictObject({
+  ...dishFields,
+  description: dishFields.description.default(""),
+  allergens: dishFields.allergens.default([]),
+  available: dishFields.available.default(true),
+  stock: dishFields.stock.default(null),
+});
+
+//! PATCH /dishes/:id → tout est optionnel, mais au moins un champ
+export const updateDishSchema = z
+  .strictObject(dishFields)
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Au moins un champ à modifier",
+  });
+
+//! Les types TypeScript créer à partir du schéma
 export type DishQuery = z.infer<typeof dishQuerySchema>;
+export type CreateDishInput = z.infer<typeof createDishSchema>;
+export type UpdateDishInput = z.infer<typeof updateDishSchema>;

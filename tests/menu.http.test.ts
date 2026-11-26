@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app.js";
 import type { Container } from "../src/container.js";
 import { createAuth, type AuthUserStore } from "../src/fourni/auth/index.js";
+import { signToken } from "../src/fourni/auth/crypto.js";
 import { MenuController } from "../src/modules/menu/menu.controller.js";
 import { MenuService } from "../src/modules/menu/menu.service.js";
 import { OrderController } from "../src/modules/orders/order.controller.js";
@@ -36,6 +37,7 @@ function createTestApp() {
     },
     findById: async () => null,
     list: async () => ({ items: [], total: 0 }),
+    updateStatus: async () => null,
   };
   const container: Container = {
     config,

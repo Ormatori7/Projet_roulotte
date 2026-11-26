@@ -44,7 +44,7 @@ async function main() {
         description: dish.description,
         priceCents: dish.priceCents,
         available: dish.available,
-        // stock: dish.stock, // a decommenter au palier 2
+        stock: dish.stock,
         category: { connect: { name: dish.category } },
         allergens: { connect: dish.allergens.map((code) => ({ code })) },
       },

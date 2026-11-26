@@ -16,7 +16,7 @@ export function createApp(container: Container) {
     res.json({ status: "ok" });
   });
   app.use("/auth", container.auth.router);
-  app.use(createMenuRouter(container.controllers.menu));
+  app.use(createMenuRouter(container.controllers.menu, container.auth));
   app.use(
     "/orders",
     createOrderRouter(container.controllers.orders, container.auth),
