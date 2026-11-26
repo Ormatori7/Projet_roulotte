@@ -32,6 +32,7 @@ function fauxOrders(overrides = {}) {
     create: vi.fn(async (data) => ({ ...commande(1, data.userId), ...data })),
     findById: vi.fn(async () => null),
     list: vi.fn(async () => ({ items: [], total: 0 })),
+    updateStatus: vi.fn(async () => null), 
     ...overrides,
   };
 }

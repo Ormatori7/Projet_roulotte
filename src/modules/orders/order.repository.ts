@@ -1,11 +1,12 @@
 // DAO des commandes : l'interface (le contrat) et son implémentation Prisma.
 import type { PrismaClient } from "../../generated/prisma/client";
-import type { NewOrder, OrderFilter, OrderRecord } from "./order.types";
+import type { NewOrder, OrderFilter, OrderRecord, OrderStatus } from "./order.types";
 
 export interface OrderRepository {
   create(data: NewOrder): Promise<OrderRecord>;
   findById(id: number): Promise<OrderRecord | null>;
   list(filter: OrderFilter): Promise<{ items: OrderRecord[]; total: number }>;
+  updateStatus(id: number, from: OrderStatus, to: OrderStatus): Promise<OrderRecord | null>;
 }
 
 // Ce qu'on charge avec chaque commande : son client et ses lignes (avec le nom du plat)
@@ -52,5 +53,31 @@ export class PrismaOrderRepository implements OrderRepository {
     ]);
 
     return { items, total };
+  }
+
+  updateStatus(id: number, from: OrderStatus, to: OrderStatus): Promise<OrderRecord | null> {
+    return this.prisma.$transaction(async (tx) => {
+      // Mise à jour conditionnelle : seulement si la commande a encore le statut attendu
+      // Deux annulations simultanées ne peuvent donc pas rendre le stock deux fois.
+      const result = await tx.order.updateMany({
+        where: { id, status: from },
+        data: { status: to }
+      })
+      if (result.count === 0) return null;
+
+      // Annulation d'une commande (remet le nombre de plat commandé dans le stock)
+      if (to === "CANCELLED") {
+        const items = await tx.orderItem.findMany({ where : { orderId: id }});
+        for (const item of items) {
+          // Un stock null (illimité) reste null (ex: null + 2 = null)
+          await tx.dish.update({
+            where: { id: item.dishId },
+            data: { stock: { increment: item.quantity } }
+          })
+        }
+      }
+
+      return tx.order.findUnique({ where: { id }, include: withDetails });
+    })
   }
 }
