@@ -39,6 +39,7 @@ model User {
   orders Order[] // 1-n : un utilisateur a plusieurs commandes
 }
 
+// . -----------Les modèles pour la db ----------
 model Category {
   id       Int    @id @default(autoincrement())
   name     String @unique
@@ -76,6 +77,8 @@ model Dish {
 
   @@index([categoryId])
 }
+
+// . ----------------------------------------------
 
 model Order {
   id         Int         @id @default(autoincrement())
