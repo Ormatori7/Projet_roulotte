@@ -33,7 +33,7 @@ export function fakeMenuRepository(
     findDishes: async () => ({ items: dishes, total: dishes.length }),
     findDishById: async (id) => dishes.find((d) => d.id === id) ?? null,
     findByIds: async (ids) => dishes.filter((d) => ids.includes(d.id)),
-    // Palier 2 : le faux repository répond simplement
+    // .Palier 2 : le faux repository répond simplement
     findDishByName: async (name) => dishes.find((d) => d.name === name) ?? null,
     categoryExists: async (id) => id === burgers.id,
     findAllergensByCodes: async (codes) =>
