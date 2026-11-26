@@ -63,8 +63,7 @@ model Dish {
   priceCents  Int
   available   Boolean @default(true)
 
-  // Palier 2 (migration "stock") : null = stock illimité
-  // stock Int?
+  stock Int?
 
   // Palier 3 (migration "image")
   // imageUrl String?
