@@ -4,6 +4,7 @@ import request from "supertest";
 import { z } from "zod";
 import { AppError, errorHandler, notFoundHandler } from "../src/shared/errors"
 
+// sert a simuler toutes les erreurs possibles
 function createTestApp() {
   const app = express();
   app.use(express.json());
