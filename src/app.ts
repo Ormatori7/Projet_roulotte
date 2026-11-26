@@ -1,8 +1,9 @@
 import express from "express";
 import type { Container } from "./container.js";
 import { authErrorHandler, installSecurity } from "./fourni/auth/index.js";
-import { errorHandler, notFoundHandler } from "./shared/errors";
 import { createMenuRouter } from "./modules/menu/menu.routes.js";
+import { createOrderRouter } from "./modules/orders/order.routes.js";
+import { errorHandler, notFoundHandler } from "./shared/errors.js";
 
 export function createApp(container: Container) {
   const app = express();
@@ -10,14 +11,17 @@ export function createApp(container: Container) {
   // Sécurité (Helmet, CORS, parseur JSON) : avant toutes les routes
   installSecurity(app, { corsOrigin: container.config.CORS_ORIGIN });
 
-  // 2. Routes
+  // Routes
   app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
   });
   app.use("/auth", container.auth.router);
   app.use(createMenuRouter(container.controllers.menu));
-  // les routes orders seront ici
-  
+  app.use(
+    "/orders",
+    createOrderRouter(container.controllers.orders, container.auth),
+  );
+
   // Aucune route n'a répondu : 404
   app.use(notFoundHandler);
 

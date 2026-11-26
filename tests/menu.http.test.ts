@@ -6,6 +6,9 @@ import type { Container } from "../src/container.js";
 import { createAuth, type AuthUserStore } from "../src/fourni/auth/index.js";
 import { MenuController } from "../src/modules/menu/menu.controller.js";
 import { MenuService } from "../src/modules/menu/menu.service.js";
+import { OrderController } from "../src/modules/orders/order.controller.js";
+import type { OrderRepository } from "../src/modules/orders/order.repository.js";
+import { OrderService } from "../src/modules/orders/order.service.js";
 import { fakeMenuRepository, plat } from "./helpers/fake-menu.js";
 
 // . Construit une application de test, sans base de données
@@ -26,11 +29,22 @@ function createTestApp() {
     JWT_EXPIRES_IN: "2h",
     CORS_ORIGIN: "http://localhost:5173",
   };
+  // Faux repository des commandes : pas utilisé par ces tests
+  const orders: OrderRepository = {
+    create: async () => {
+      throw new Error("non utilisé dans ces tests");
+    },
+    findById: async () => null,
+    list: async () => ({ items: [], total: 0 }),
+  };
   const container: Container = {
     config,
     auth: createAuth({ users, jwtSecret: config.JWT_SECRET }),
-    repositories: { users, menu },
-    controllers: { menu: new MenuController(new MenuService(menu)) },
+    repositories: { users, menu, dishes: menu, orders },
+    controllers: {
+      menu: new MenuController(new MenuService(menu)),
+      orders: new OrderController(new OrderService(orders, menu)),
+    },
   };
   return createApp(container);
 }
