@@ -7,6 +7,10 @@ import type {
   PrismaClient,
 } from "../../generated/prisma/client.js";
 
+
+import type { CreateDishInput, UpdateDishInput } from "./menu.schemas.js";
+
+
 // ! Un plat est toujours chargé avec sa catégorie et ses allergènes
 const dishInclude = {
   category: true,
@@ -35,6 +39,17 @@ export interface MenuRepository {
   ): Promise<{ items: DishWithRelations[]; total: number }>;
   findDishById(id: number): Promise<DishWithRelations | null>;
   findByIds(ids: number[]): Promise<DishWithRelations[]>; // pour le service des commandes
+
+  // Palier 2 : vérifications avant d'écrire
+  findDishByName(name: string): Promise<DishWithRelations | null>;
+  categoryExists(id: number): Promise<boolean>;
+  findAllergensByCodes(codes: string[]): Promise<Allergen[]>;
+  isDishOrdered(id: number): Promise<boolean>;
+
+  // Palier 2 : écrire
+  createDish(input: CreateDishInput): Promise<DishWithRelations>;
+  updateDish(id: number, input: UpdateDishInput): Promise<DishWithRelations>;
+  deleteDish(id: number): Promise<void>;
 }
 
 // ! L'implémentation Prisma : COMMENT il le fait
@@ -83,5 +98,61 @@ export class PrismaMenuRepository implements MenuRepository {
       where: { id: { in: ids } },
       include: dishInclude,
     });
+  }
+  // ---------- Palier 2 : vérifications ----------
+
+  findDishByName(name: string) {
+    return this.prisma.dish.findUnique({
+      where: { name },
+      include: dishInclude,
+    });
+  }
+
+  async categoryExists(id: number) {
+    const count = await this.prisma.category.count({ where: { id } });
+    return count > 0;
+  }
+
+  findAllergensByCodes(codes: string[]) {
+    return this.prisma.allergen.findMany({ where: { code: { in: codes } } });
+  }
+
+  async isDishOrdered(id: number) {
+    const count = await this.prisma.orderItem.count({ where: { dishId: id } });
+    return count > 0;
+  }
+
+  // ---------- Palier 2 : écriture ----------
+
+  createDish({ categoryId, allergens, ...rest }: CreateDishInput) {
+    return this.prisma.dish.create({
+      data: {
+        ...rest, // name, description, priceCents, available, stock
+        category: { connect: { id: categoryId } },
+        allergens: { connect: allergens.map((code) => ({ code })) },
+      },
+      include: dishInclude,
+    });
+  }
+
+  updateDish(id: number, { categoryId, allergens, ...rest }: UpdateDishInput) {
+    return this.prisma.dish.update({
+      where: { id },
+      data: {
+        ...rest, // seulement les champs envoyés
+        category:
+          categoryId !== undefined
+            ? { connect: { id: categoryId } }
+            : undefined,
+        allergens: allergens
+          ? { set: allergens.map((code) => ({ code })) }
+          : undefined,
+      },
+      include: dishInclude,
+    });
+  }
+
+  async deleteDish(id: number) {
+    await this.prisma.dish.delete({ where: { id } });
   }
 }
