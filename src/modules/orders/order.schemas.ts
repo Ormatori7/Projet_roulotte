@@ -37,3 +37,8 @@ export type ListOrdersQuery = z.infer<typeof listOrdersQuerySchema>;
 export const orderIdParamSchema = z.object({
     id: z.coerce.number().int().min(1)
 });
+
+// PATCH /orders/:id/status
+export const updateStatusSchema = z.strictObject({
+    status: z.enum(ORDER_STATUSES)
+});

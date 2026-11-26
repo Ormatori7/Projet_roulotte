@@ -3,7 +3,7 @@
 import type { Request, Response } from "express";
 import { currentUser } from "../../fourni/auth/index";
 import { toOrderDto } from "./order.dto";
-import { createOrderSchema, listOrdersQuerySchema, orderIdParamSchema } from "./order.schemas"; 
+import { createOrderSchema, listOrdersQuerySchema, orderIdParamSchema, updateStatusSchema } from "./order.schemas"; 
 import type { OrderService } from "./order.service";
 
 export class OrderController {
@@ -27,6 +27,14 @@ export class OrderController {
     getOne = async (req: Request, res: Response) => {
         const { id } = orderIdParamSchema.parse(req.params);
         const order = await this.service.getFor(currentUser(req), id);
+        res.json(toOrderDto(order));
+    }
+
+    // PATCH /orders/:id/status
+    changeStatus = async (req: Request, res: Response) => {
+        const { id } = orderIdParamSchema.parse(req.params);
+        const { status } = updateStatusSchema.parse(req.body);
+        const order = await this.service.changeStatus(currentUser(req), id, status);
         res.json(toOrderDto(order));
     }
 }
