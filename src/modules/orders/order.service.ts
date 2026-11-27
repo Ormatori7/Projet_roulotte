@@ -7,11 +7,14 @@ import type { OrderRepository } from "./order.repository";
 import type { CreateOrderInput, ListOrdersQuery } from "./order.schemas";
 import type { OrderRecord, OrderStatus } from "./order.types";
 import { canTransition, customerCanCancel } from "./order.status";
+import { EventBus } from "../../shared/event-bus";
 
 export class OrderService {
     constructor(
         private readonly orders: OrderRepository,
         private readonly dishes: DishRepository,
+        // Le bus est facultatif : sans luin les événements partent dans le vide (pratique en test)
+        private readonly events: EventBus = new EventBus(),
     ) { }
 
     // Passer une commande : les prix viennent de la base, jamais du client
@@ -42,12 +45,15 @@ export class OrderService {
 
         const totalCents = lines.reduce((sum, line) => sum + line.quantity * line.unitPriceCents, 0);
 
-        return this.orders.create({
+        const order = await this.orders.create({
             userId: user.id,
             note: input.note ?? null,
             totalCents,
             items: lines,
         });
+
+        this.events.emit("order.created", order);
+        return order;
     }
 
     // Une commande : la sienne pour un client, n'importe laquelle pour la cuisine et l'admin
@@ -97,6 +103,7 @@ export class OrderService {
         if (!updated) {
             throw new AppError(409, "INVALID_TRANSITION", "Le statut de la commande vient de changer");
         }
+        this.events.emit("order.updated", updated);
         return updated;
     }
 }
