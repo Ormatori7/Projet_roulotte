@@ -37,6 +37,7 @@ function createTestApp() {
     },
     findById: async () => null,
     list: async () => ({ items: [], total: 0 }),
+    updateStatus: async() => null,
   };
   const container: Container = {
     config,

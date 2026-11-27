@@ -21,6 +21,10 @@ import {
   PrismaUserRepository,
   type UserRepository,
 } from "./modules/users/user.repository.js";
+import {
+  PrismaHealthRepository,
+  type HealthRepository 
+} from "./modules/health/health.repository.js";
 
 export type Container = {
   config: Config;
@@ -30,6 +34,7 @@ export type Container = {
     menu: MenuRepository;
     dishes: DishRepository;
     orders: OrderRepository;
+    health: HealthRepository;
   };
   controllers: {
     menu: MenuController;
@@ -44,6 +49,7 @@ export function createContainer(): Container {
     menu: new PrismaMenuRepository(prisma),
     dishes: new PrismaDishRepository(prisma),
     orders: new PrismaOrderRepository(prisma),
+    health: new PrismaHealthRepository(prisma),
   };
 
   // L'authentification fournie, branchée sur NOTRE repository d'utilisateurs

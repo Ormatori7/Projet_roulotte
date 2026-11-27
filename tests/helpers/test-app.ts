@@ -54,11 +54,17 @@ export function memoryOrderRepository(): OrderRepository {
       const start = (filter.page - 1) * filter.pageSize;
       return { items: found.slice(start, start + filter.pageSize), total: found.length };
     },
+    updateStatus: async (id, from, to) => {
+      const order = orders.find((candidate) => candidate.id === id && candidate.status === from);
+      if(!order) return null;
+      order.status = to;
+      return order;
+    }
   };
 }
 
 // L'application de test : plat 1 a 1000 centimes, plat 2 a 400, plat 3 indisponible
-export function createTestApp() {
+export function createTestApp(options: { databaseUp?: boolean } = {}) {
   const users = memoryUserRepository();
   const orders = memoryOrderRepository();
   const menu = fakeMenuRepository([
@@ -78,7 +84,13 @@ export function createTestApp() {
   const container: Container = {
     config,
     auth: createAuth({ users, jwtSecret: config.JWT_SECRET }),
-    repositories: { users, menu, dishes: menu, orders },
+    repositories: {
+      users,
+      menu,
+      dishes: menu,
+      orders,
+      health: { isDatabaseUp: async () => options.databaseUp ?? true},
+    },
     controllers: {
       menu: new MenuController(new MenuService(menu)),
       orders: new OrderController(new OrderService(orders, menu)),
