@@ -39,20 +39,29 @@ export function memoryOrderRepository(): OrderRepository {
         updatedAt: new Date(),
         userId: data.userId,
         user: { id: data.userId, name: `Client ${data.userId}` },
-        items: data.items.map((item) => ({ ...item, dish: { name: `Plat ${item.dishId}` } })),
+        items: data.items.map((item) => ({
+          ...item,
+          dish: { name: `Plat ${item.dishId}` },
+        })),
       };
       orders.push(order);
       return order;
     },
     findById: async (id) => orders.find((order) => order.id === id) ?? null,
+    updateStatus: async () => null,
     list: async (filter) => {
       const found = orders.filter(
         (order) =>
           (filter.userId === undefined || order.userId === filter.userId) &&
-          (filter.statuses === undefined || filter.statuses.includes(order.status)),
+          (filter.statuses === undefined ||
+            filter.statuses.includes(order.status)),
       );
+
       const start = (filter.page - 1) * filter.pageSize;
-      return { items: found.slice(start, start + filter.pageSize), total: found.length };
+      return {
+        items: found.slice(start, start + filter.pageSize),
+        total: found.length,
+      };
     },
     updateStatus: async (id, from, to) => {
       const order = orders.find((candidate) => candidate.id === id && candidate.status === from);

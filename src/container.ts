@@ -15,6 +15,7 @@ import {
   PrismaMenuRepository,
   type MenuRepository,
 } from "./modules/menu/menu.repository.js";
+import { DiskImageStorage } from "./modules/menu/image.storage.js";
 import { MenuService } from "./modules/menu/menu.service.js";
 import { OrderController } from "./modules/orders/order.controller.js";
 import {
@@ -73,7 +74,10 @@ export function createContainer(): Container {
   });
 
   // Les services (règles métier) reçoivent les repositories
-  const menuService = new MenuService(repositories.menu);
+  const menuService = new MenuService(
+    repositories.menu,
+    new DiskImageStorage(),
+  );
   const orderService = new OrderService(
     repositories.orders,
     repositories.dishes,

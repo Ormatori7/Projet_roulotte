@@ -7,9 +7,7 @@ import type {
   PrismaClient,
 } from "../../generated/prisma/client.js";
 
-
 import type { CreateDishInput, UpdateDishInput } from "./menu.schemas.js";
-
 
 // ! Un plat est toujours chargé avec sa catégorie et ses allergènes
 const dishInclude = {
@@ -50,6 +48,8 @@ export interface MenuRepository {
   createDish(input: CreateDishInput): Promise<DishWithRelations>;
   updateDish(id: number, input: UpdateDishInput): Promise<DishWithRelations>;
   deleteDish(id: number): Promise<void>;
+  // Palier 3 : photo du plat
+  updateImageUrl(id: number, imageUrl: string): Promise<DishWithRelations>;
 }
 
 // ! L'implémentation Prisma : COMMENT il le fait
@@ -154,5 +154,14 @@ export class PrismaMenuRepository implements MenuRepository {
 
   async deleteDish(id: number) {
     await this.prisma.dish.delete({ where: { id } });
+  }
+  // ---------- Palier 3 : photo ----------
+
+  updateImageUrl(id: number, imageUrl: string) {
+    return this.prisma.dish.update({
+      where: { id },
+      data: { imageUrl },
+      include: dishInclude,
+    });
   }
 }
