@@ -5,9 +5,13 @@ import { UPLOADS_DIR } from "./modules/menu/image.storage.js";
 import { createMenuRouter } from "./modules/menu/menu.routes.js";
 import { createOrderRouter } from "./modules/orders/order.routes.js";
 import { errorHandler, notFoundHandler } from "./shared/errors.js";
+import { requestId } from "./shared/request-id";
+import { requestLogger } from "./shared/logger";
 
 export function createApp(container: Container) {
   const app = express();
+  app.use(requestId);
+  app.use(requestLogger);
 
   // Sécurité (Helmet, CORS, parseur JSON) : avant toutes les routes
   installSecurity(app, { corsOrigin: container.config.CORS_ORIGIN });
@@ -23,8 +27,13 @@ export function createApp(container: Container) {
   );
 
   // Routes
-  app.get("/health", (_req, res) => {
-    res.json({ status: "ok" });
+  app.get("/health", async (_req, res) => {
+    const databaseUp = await container.repositories.health.isDatabaseUp();
+    if (databaseUp) {
+      res.json({ status: "ok", database: "up" });
+    } else {
+      res.status(503).json({ status: "degraded", database: "down" });
+    }
   });
   app.use("/auth", container.auth.router);
   app.use(createMenuRouter(container.controllers.menu, container.auth));

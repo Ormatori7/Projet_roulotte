@@ -10,6 +10,7 @@ import { OrderService } from "../../src/modules/orders/order.service.js";
 import type { OrderRecord } from "../../src/modules/orders/order.types.js";
 import type { UserRepository } from "../../src/modules/users/user.repository.js";
 import { fakeMenuRepository, plat } from "./fake-menu.js";
+import { EventBus } from "../../src/shared/event-bus";
 
 // Les utilisateurs sont ranges dans un simple tableau
 export function memoryUserRepository(): UserRepository {
@@ -48,7 +49,7 @@ export function memoryOrderRepository(): OrderRepository {
       return order;
     },
     findById: async (id) => orders.find((order) => order.id === id) ?? null,
-    updateStatus: async () => null,
+
     list: async (filter) => {
       const found = orders.filter(
         (order) =>
@@ -63,11 +64,17 @@ export function memoryOrderRepository(): OrderRepository {
         total: found.length,
       };
     },
+    updateStatus: async (id, from, to) => {
+      const order = orders.find((candidate) => candidate.id === id && candidate.status === from);
+      if(!order) return null;
+      order.status = to;
+      return order;
+    }
   };
 }
 
 // L'application de test : plat 1 a 1000 centimes, plat 2 a 400, plat 3 indisponible
-export function createTestApp() {
+export function createTestApp(options: { databaseUp?: boolean } = {}) {
   const users = memoryUserRepository();
   const orders = memoryOrderRepository();
   const menu = fakeMenuRepository([
@@ -87,7 +94,14 @@ export function createTestApp() {
   const container: Container = {
     config,
     auth: createAuth({ users, jwtSecret: config.JWT_SECRET }),
-    repositories: { users, menu, dishes: menu, orders },
+    events: new EventBus(),
+    repositories: {
+      users,
+      menu,
+      dishes: menu,
+      orders,
+      health: { isDatabaseUp: async () => options.databaseUp ?? true},
+    },
     controllers: {
       menu: new MenuController(new MenuService(menu)),
       orders: new OrderController(new OrderService(orders, menu)),

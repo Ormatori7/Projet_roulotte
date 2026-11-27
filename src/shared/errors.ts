@@ -2,6 +2,7 @@
 // { error: { code, message, details? } }
 import type { ErrorRequestHandler, RequestHandler } from "express";
 import { ZodError } from "zod";
+import { logger } from "./logger";
 
 // Une erreur « prévue » : on connaît son statut HTTP et son code
 export class AppError extends Error {
@@ -22,7 +23,7 @@ export const notFoundHandler: RequestHandler = (_req, _res, next) => {
 };
 
 // Dernier middleware de l'application : transforme toute erreur en réponse JSON
-export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   // Erreur métier levée par un service
   if (err instanceof AppError) {
     const body = { code: err.code, message: err.message, ...(err.details === undefined ? {} : { details: err.details }) };
@@ -38,6 +39,6 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   }
 
   // Erreur imprévue : on la journalise, mais on ne renvoie aucun détail technique
-  console.error(err);
+  logger.error({ err, requestId: res.locals.requestId, method: req.method, url: req.originalUrl }, "erreur imprévue");
   res.status(500).json({ error: { code: "INTERNAL_ERROR", message: "Erreur interne" } });
 };
