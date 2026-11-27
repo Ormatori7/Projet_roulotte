@@ -49,6 +49,7 @@ export function memoryOrderRepository(): OrderRepository {
     },
     findById: async (id) => orders.find((order) => order.id === id) ?? null,
     updateStatus: async () => null,
+
     list: async (filter) => {
       const found = orders.filter(
         (order) =>
@@ -62,6 +63,15 @@ export function memoryOrderRepository(): OrderRepository {
         items: found.slice(start, start + filter.pageSize),
         total: found.length,
       };
+    },
+
+    markPaid: async (id) => {
+      const order = orders.find(
+        (candidate) => candidate.id === id && candidate.paymentStatus === "UNPAID" && candidate.status !== "CANCELLED",
+      );
+      if (!order) return null;
+      order.paymentStatus = "PAID";
+      return order;
     },
   };
 }
