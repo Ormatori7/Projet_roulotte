@@ -1,6 +1,7 @@
 // DAO des commandes : l'interface (le contrat) et son implémentation Prisma.
 import type { PrismaClient } from "../../generated/prisma/client";
 import type { NewOrder, OrderFilter, OrderRecord, OrderStatus } from "./order.types";
+import { AppError } from "../../shared/errors";
 
 export interface OrderRepository {
   create(data: NewOrder): Promise<OrderRecord>;
@@ -18,18 +19,45 @@ const withDetails = {
 } as const;
 
 export class PrismaOrderRepository implements OrderRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(  private readonly prisma: PrismaClient) {}
 
   // La commande et ses lignes sont créées
-  create(data: NewOrder): Promise<OrderRecord> {
-    return this.prisma.order.create({
-      data: {
-        userId: data.userId,
-        note: data.note,
-        totalCents: data.totalCents,
-        items: { create: data.items },
-      },
-      include: withDetails,
+create(data: NewOrder): Promise<OrderRecord> {
+    return this.prisma.$transaction(async (tx) => {
+      const shortages: { dishId: number; available: number }[] = [];
+
+      for (const item of data.items) {
+        // Décrément conditionnel : la ligne n'est modifiée que si le stock suffit
+        // (stock null = illimité). Jamais « lire puis écrire ».
+        const result = await tx.dish.updateMany({
+          where: {
+            id: item.dishId,
+            OR: [{ stock: null }, { stock: { gte: item.quantity } }],
+          },
+          data: { stock: { decrement: item.quantity } },
+        });
+
+        // count === 0 : aucune ligne modifiée, donc pas assez de stock pour ce plat
+        if (result.count === 0) {
+          const dish = await tx.dish.findUnique({ where: { id: item.dishId }, select: { stock: true } });
+          shortages.push({ dishId: item.dishId, available: dish?.stock ?? 0 });
+        }
+      }
+
+      // Lever une erreur annule toute la transaction : aucun stock n'est consommé
+      if (shortages.length > 0) {
+        throw new AppError(409, "OUT_OF_STOCK", "Stock insuffisant", shortages);
+      }
+
+      return tx.order.create({
+        data: {
+          userId: data.userId,
+          note: data.note,
+          totalCents: data.totalCents,
+          items: { create: data.items },
+        },
+        include: withDetails,
+      });
     });
   }
 

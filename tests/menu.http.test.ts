@@ -14,6 +14,8 @@ import { fakeMenuRepository, plat } from "./helpers/fake-menu.js";
 import { FakePaymentGateway } from "../src/modules/payment/fake-payment.gateway.js";
 import { PaymentController } from "../src/modules/payment/payment.controller.js";
 import { PaymentService } from "../src/modules/payment/payment.service.js";
+import { SseHub } from "../src/modules/events/sse-hub.js";
+import { EventBus } from "../src/shared/event-bus.js";
 
 // . Construit une application de test, sans base de données
 function createTestApp() {
@@ -49,7 +51,9 @@ function createTestApp() {
   const container: Container = {
     config,
     auth: createAuth({ users, jwtSecret: config.JWT_SECRET }),
-    repositories: { users, menu, dishes: menu, orders },
+    events: new EventBus(),
+    sse: new SseHub(),
+    repositories: { users, menu, dishes: menu, orders, health: { isDatabaseUp: async () => true } },
     controllers: {
       menu: new MenuController(new MenuService(menu)),
       orders: new OrderController(new OrderService(orders, menu)),
