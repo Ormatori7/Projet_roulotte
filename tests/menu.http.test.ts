@@ -42,7 +42,7 @@ function createTestApp() {
   const container: Container = {
     config,
     auth: createAuth({ users, jwtSecret: config.JWT_SECRET }),
-    repositories: { users, menu, dishes: menu, orders },
+    repositories: { users, menu, dishes: menu, orders, health: { isDatabaseUp: async () => true } },
     controllers: {
       menu: new MenuController(new MenuService(menu)),
       orders: new OrderController(new OrderService(orders, menu)),
