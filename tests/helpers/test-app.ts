@@ -11,6 +11,7 @@ import type { OrderRecord } from "../../src/modules/orders/order.types.js";
 import type { UserRepository } from "../../src/modules/users/user.repository.js";
 import { fakeMenuRepository, plat } from "./fake-menu.js";
 import { EventBus } from "../../src/shared/event-bus";
+import { SseHub } from "../../src/modules/events/sse-hub.js";
 
 // Les utilisateurs sont ranges dans un simple tableau
 export function memoryUserRepository(): UserRepository {
@@ -95,6 +96,7 @@ export function createTestApp(options: { databaseUp?: boolean } = {}) {
     config,
     auth: createAuth({ users, jwtSecret: config.JWT_SECRET }),
     events: new EventBus(),
+    sse: new SseHub(),
     repositories: {
       users,
       menu,

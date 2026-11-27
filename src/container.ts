@@ -28,11 +28,13 @@ import {
   PrismaUserRepository,
   type UserRepository,
 } from "./modules/users/user.repository.js";
+import { SseHub } from "./modules/events/sse-hub.js";
 
 export type Container = {
   config: Config;
   auth: Auth;
   events: EventBus;
+  sse: SseHub;
   repositories: {
     users: UserRepository;
     menu: MenuRepository;
@@ -56,6 +58,10 @@ export function createContainer(): Container {
   // Observer : une commande créée ou modifiée peut changer un stock, donc on vide le cache
   events.on("order.created", () => menu.invalidate());
   events.on("order.updated", () => menu.invalidate());
+
+  const sse = new SseHub();
+  events.on("order.created", (order) => sse.orderCreated(order));
+  events.on("order.updated", (order) => sse.orderUpdated(order));
 
   // Les repositories (accès aux données)
   const repositories = {
@@ -90,5 +96,5 @@ export function createContainer(): Container {
     orders: new OrderController(orderService),
   };
 
-  return { config, auth, events, repositories, controllers };
+  return { config, auth, events, sse, repositories, controllers };
 }
