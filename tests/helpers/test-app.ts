@@ -10,6 +10,7 @@ import { OrderService } from "../../src/modules/orders/order.service.js";
 import type { OrderRecord } from "../../src/modules/orders/order.types.js";
 import type { UserRepository } from "../../src/modules/users/user.repository.js";
 import { fakeMenuRepository, plat } from "./fake-menu.js";
+import { EventBus } from "../../src/shared/event-bus";
 
 // Les utilisateurs sont ranges dans un simple tableau
 export function memoryUserRepository(): UserRepository {
@@ -48,7 +49,7 @@ export function memoryOrderRepository(): OrderRepository {
       return order;
     },
     findById: async (id) => orders.find((order) => order.id === id) ?? null,
-    updateStatus: async () => null,
+
     list: async (filter) => {
       const found = orders.filter(
         (order) =>
@@ -93,6 +94,7 @@ export function createTestApp(options: { databaseUp?: boolean } = {}) {
   const container: Container = {
     config,
     auth: createAuth({ users, jwtSecret: config.JWT_SECRET }),
+    events: new EventBus(),
     repositories: {
       users,
       menu,

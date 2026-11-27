@@ -83,4 +83,10 @@ export class CachedMenuRepository implements MenuRepository {
     await this.inner.deleteDish(id);
     this.invalidate();
   }
+
+  async updateImageUrl(id: number, imageUrl: string) {
+    const dish = await this.inner.updateImageUrl(id, imageUrl);
+    this.invalidate();
+    return dish;
+  }
 }
