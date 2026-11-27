@@ -5,6 +5,11 @@ import {
   PrismaDishRepository,
   type DishRepository,
 } from "./modules/menu/dish.repository.js";
+import {
+  PrismaHealthRepository,
+  type HealthRepository,
+} from "./modules/health/health.repository.js";
+import { CachedMenuRepository } from "./modules/menu/cached-menu.repository.js";
 import { MenuController } from "./modules/menu/menu.controller.js";
 import {
   PrismaMenuRepository,
@@ -18,33 +23,58 @@ import {
   type OrderRepository,
 } from "./modules/orders/order.repository.js";
 import { OrderService } from "./modules/orders/order.service.js";
+import { FakePaymentGateway } from "./modules/payment/fake-payment.gateway.js";
+import { PaymentController } from "./modules/payment/payment.controller.js";
+import { PaymentService } from "./modules/payment/payment.service.js";
+import { EventBus } from "./shared/event-bus.js";
 import {
   PrismaUserRepository,
   type UserRepository,
 } from "./modules/users/user.repository.js";
+import { SseHub } from "./modules/events/sse-hub.js";
 
 export type Container = {
   config: Config;
   auth: Auth;
+  events: EventBus;
+  sse: SseHub;
   repositories: {
     users: UserRepository;
     menu: MenuRepository;
     dishes: DishRepository;
     orders: OrderRepository;
+    health: HealthRepository;
   };
   controllers: {
     menu: MenuController;
     orders: OrderController;
+    payment: PaymentController;
   };
 };
 
 export function createContainer(): Container {
+  // Le bus d'événements, partagé par toute l'application
+  const events = new EventBus();
+
+  // Decorator : le repository Prisma du menu est enveloppé dans un cache
+  const menu = new CachedMenuRepository(new PrismaMenuRepository(prisma));
+
+  // Observer : une commande créée ou modifiée peut changer un stock, donc on vide le cache
+  events.on("order.created", () => menu.invalidate());
+  events.on("order.updated", () => menu.invalidate());
+
+  // Temps réel : le hub SSE s'abonne lui aussi au bus
+  const sse = new SseHub();
+  events.on("order.created", (order) => sse.orderCreated(order));
+  events.on("order.updated", (order) => sse.orderUpdated(order));
+
   // Les repositories (accès aux données)
   const repositories = {
     users: new PrismaUserRepository(prisma),
-    menu: new PrismaMenuRepository(prisma),
+    menu,
     dishes: new PrismaDishRepository(prisma),
     orders: new PrismaOrderRepository(prisma),
+    health: new PrismaHealthRepository(prisma),
   };
 
   // L'authentification fournie, branchée sur NOTRE repository d'utilisateurs
@@ -62,13 +92,22 @@ export function createContainer(): Container {
   const orderService = new OrderService(
     repositories.orders,
     repositories.dishes,
+    events,
+  );
+
+  // Provisoire : faux prestataire, remplacé par la Factory à l'étape 8
+  const paymentService = new PaymentService(
+    repositories.orders,
+    new FakePaymentGateway(),
+    events,
   );
 
   // Les controllers (HTTP) reçoivent les services
   const controllers = {
     menu: new MenuController(menuService),
     orders: new OrderController(orderService),
+    payment: new PaymentController(paymentService),
   };
 
-  return { config, auth, repositories, controllers };
+  return { config, auth, events, sse, repositories, controllers };
 }

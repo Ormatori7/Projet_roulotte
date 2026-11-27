@@ -11,6 +11,9 @@ import { OrderController } from "../src/modules/orders/order.controller.js";
 import type { OrderRepository } from "../src/modules/orders/order.repository.js";
 import { OrderService } from "../src/modules/orders/order.service.js";
 import { fakeMenuRepository, plat } from "./helpers/fake-menu.js";
+import { FakePaymentGateway } from "../src/modules/payment/fake-payment.gateway.js";
+import { PaymentController } from "../src/modules/payment/payment.controller.js";
+import { PaymentService } from "../src/modules/payment/payment.service.js";
 
 // . Construit une application de test, sans base de données
 function createTestApp() {
@@ -46,6 +49,7 @@ function createTestApp() {
     controllers: {
       menu: new MenuController(new MenuService(menu)),
       orders: new OrderController(new OrderService(orders, menu)),
+            payment: new PaymentController(new PaymentService(orders, new FakePaymentGateway())),
     },
   };
   return createApp(container);

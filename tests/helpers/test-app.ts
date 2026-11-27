@@ -2,13 +2,18 @@ import request from "supertest";
 import { createApp } from "../../src/app.js";
 import type { Container } from "../../src/container.js";
 import { createAuth, hashPassword, type Role, type StoredUser } from "../../src/fourni/auth/index.js";
+import { SseHub } from "../../src/modules/events/sse-hub.js";
 import { MenuController } from "../../src/modules/menu/menu.controller.js";
 import { MenuService } from "../../src/modules/menu/menu.service.js";
 import { OrderController } from "../../src/modules/orders/order.controller.js";
 import type { OrderRepository } from "../../src/modules/orders/order.repository.js";
 import { OrderService } from "../../src/modules/orders/order.service.js";
 import type { OrderRecord } from "../../src/modules/orders/order.types.js";
+import { FakePaymentGateway } from "../../src/modules/payment/fake-payment.gateway.js";
+import { PaymentController } from "../../src/modules/payment/payment.controller.js";
+import { PaymentService } from "../../src/modules/payment/payment.service.js";
 import type { UserRepository } from "../../src/modules/users/user.repository.js";
+import { EventBus } from "../../src/shared/event-bus.js";
 import { fakeMenuRepository, plat } from "./fake-menu.js";
 
 // Les utilisateurs sont ranges dans un simple tableau
@@ -33,6 +38,7 @@ export function memoryOrderRepository(): OrderRepository {
       const order: OrderRecord = {
         id: orders.length + 1,
         status: "RECEIVED",
+        paymentStatus: "UNPAID",
         note: data.note,
         totalCents: data.totalCents,
         createdAt: new Date(),
@@ -48,23 +54,24 @@ export function memoryOrderRepository(): OrderRepository {
       return order;
     },
     findById: async (id) => orders.find((order) => order.id === id) ?? null,
-    updateStatus: async () => null,
-
     list: async (filter) => {
       const found = orders.filter(
         (order) =>
           (filter.userId === undefined || order.userId === filter.userId) &&
-          (filter.statuses === undefined ||
-            filter.statuses.includes(order.status)),
+          (filter.statuses === undefined || filter.statuses.includes(order.status)),
       );
-
       const start = (filter.page - 1) * filter.pageSize;
       return {
         items: found.slice(start, start + filter.pageSize),
         total: found.length,
       };
     },
-
+    updateStatus: async (id, from, to) => {
+      const order = orders.find((candidate) => candidate.id === id && candidate.status === from);
+      if (!order) return null;
+      order.status = to;
+      return order;
+    },
     markPaid: async (id) => {
       const order = orders.find(
         (candidate) => candidate.id === id && candidate.paymentStatus === "UNPAID" && candidate.status !== "CANCELLED",
@@ -77,9 +84,10 @@ export function memoryOrderRepository(): OrderRepository {
 }
 
 // L'application de test : plat 1 a 1000 centimes, plat 2 a 400, plat 3 indisponible
-export function createTestApp() {
+export function createTestApp(options: { databaseUp?: boolean } = {}) {
   const users = memoryUserRepository();
   const orders = memoryOrderRepository();
+  const gateway = new FakePaymentGateway();
   const menu = fakeMenuRepository([
     plat(1, "Le Classique"),
     { ...plat(2, "Frites maison"), priceCents: 400 },
@@ -97,10 +105,19 @@ export function createTestApp() {
   const container: Container = {
     config,
     auth: createAuth({ users, jwtSecret: config.JWT_SECRET }),
-    repositories: { users, menu, dishes: menu, orders },
+    events: new EventBus(),
+    sse: new SseHub(),
+    repositories: {
+      users,
+      menu,
+      dishes: menu,
+      orders,
+      health: { isDatabaseUp: async () => options.databaseUp ?? true },
+    },
     controllers: {
       menu: new MenuController(new MenuService(menu)),
       orders: new OrderController(new OrderService(orders, menu)),
+      payment: new PaymentController(new PaymentService(orders, gateway)),
     },
   };
 
@@ -114,5 +131,5 @@ export function createTestApp() {
     return res.body.token as string;
   }
 
-  return { app, tokenFor };
+  return { app, tokenFor, gateway };
 }
