@@ -32,6 +32,9 @@ function createTestApp() {
     JWT_SECRET: "secret-de-test-assez-long",
     JWT_EXPIRES_IN: "2h",
     CORS_ORIGIN: "http://localhost:5173",
+    PAYMENT_PROVIDER: "fake" as const,
+    PAYMENT_URL: "http://localhost:4010",
+    PAYMENT_API_KEY: "sk_test_roulotte",
   };
   // Faux repository des commandes : pas utilisé par ces tests
   const orders: OrderRepository = {
@@ -41,6 +44,7 @@ function createTestApp() {
     findById: async () => null,
     list: async () => ({ items: [], total: 0 }),
     updateStatus: async () => null,
+    markPaid: async () => null,
   };
   const container: Container = {
     config,
@@ -49,7 +53,7 @@ function createTestApp() {
     controllers: {
       menu: new MenuController(new MenuService(menu)),
       orders: new OrderController(new OrderService(orders, menu)),
-            payment: new PaymentController(new PaymentService(orders, new FakePaymentGateway())),
+      payment: new PaymentController(new PaymentService(orders, new FakePaymentGateway())),
     },
   };
   return createApp(container);

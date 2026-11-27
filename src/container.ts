@@ -23,7 +23,7 @@ import {
   type OrderRepository,
 } from "./modules/orders/order.repository.js";
 import { OrderService } from "./modules/orders/order.service.js";
-import { FakePaymentGateway } from "./modules/payment/fake-payment.gateway.js";
+import { createPaymentGateway } from "./modules/payment/payment.factory.js";
 import { PaymentController } from "./modules/payment/payment.controller.js";
 import { PaymentService } from "./modules/payment/payment.service.js";
 import { EventBus } from "./shared/event-bus.js";
@@ -97,8 +97,8 @@ export function createContainer(): Container {
 
   // Provisoire : faux prestataire, remplacé par la Factory à l'étape 8
   const paymentService = new PaymentService(
-    repositories.orders,
-    new FakePaymentGateway(),
+    repositories.orders,    
+    createPaymentGateway(config),
     events,
   );
 
