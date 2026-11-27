@@ -11,6 +11,7 @@ import { OrderController } from "../src/modules/orders/order.controller.js";
 import type { OrderRepository } from "../src/modules/orders/order.repository.js";
 import { OrderService } from "../src/modules/orders/order.service.js";
 import { fakeMenuRepository, plat } from "./helpers/fake-menu.js";
+import { EventBus } from "../src/shared/event-bus"
 
 // . Construit une application de test, sans base de données
 function createTestApp() {
@@ -37,12 +38,13 @@ function createTestApp() {
     },
     findById: async () => null,
     list: async () => ({ items: [], total: 0 }),
-    updateStatus: async () => null,
+    updateStatus: async() => null,
   };
   const container: Container = {
     config,
     auth: createAuth({ users, jwtSecret: config.JWT_SECRET }),
-    repositories: { users, menu, dishes: menu, orders },
+    events: new EventBus(),
+    repositories: { users, menu, dishes: menu, orders, health: { isDatabaseUp: async () => true } },
     controllers: {
       menu: new MenuController(new MenuService(menu)),
       orders: new OrderController(new OrderService(orders, menu)),
