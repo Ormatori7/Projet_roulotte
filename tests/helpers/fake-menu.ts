@@ -43,5 +43,10 @@ export function fakeMenuRepository(
     createDish: async () => plat(99, "Nouveau plat"),
     updateDish: async (id) => plat(id, "Plat modifié"),
     deleteDish: async () => {},
+    // Palier 3 : renvoie le plat avec sa nouvelle photo
+    updateImageUrl: async (id, imageUrl) => ({
+      ...plat(id, "Plat avec photo"),
+      imageUrl,
+    }),
   };
 }
