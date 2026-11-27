@@ -22,6 +22,7 @@ import {
   PrismaUserRepository,
   type UserRepository,
 } from "./modules/users/user.repository.js";
+import { SseHub } from "./modules/events/sse-hub.js";
 
 export type Container = {
   config: Config;
