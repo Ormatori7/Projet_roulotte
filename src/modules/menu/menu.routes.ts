@@ -2,6 +2,7 @@
 
 import { Router } from "express";
 import type { Auth } from "../../fourni/auth/index.js";
+import { uploadImage } from "./image.upload.js";
 import type { MenuController } from "./menu.controller.js";
 
 export function createMenuRouter(controller: MenuController, auth: Auth) {
@@ -18,6 +19,13 @@ export function createMenuRouter(controller: MenuController, auth: Auth) {
   router.post("/dishes", ...adminOnly, controller.createDish);
   router.patch("/dishes/:id", ...adminOnly, controller.updateDish);
   router.delete("/dishes/:id", ...adminOnly, controller.deleteDish);
+  // Palier 3 : photo, admin uniquement (multer APRÈS les gardes)
+  router.put(
+    "/dishes/:id/image",
+    ...adminOnly,
+    uploadImage,
+    controller.setDishImage,
+  );
 
   return router;
 }
