@@ -8,6 +8,8 @@ export interface OrderRepository {
   findById(id: number): Promise<OrderRecord | null>;
   list(filter: OrderFilter): Promise<{ items: OrderRecord[]; total: number }>;
   updateStatus(id: number, from: OrderStatus, to: OrderStatus): Promise<OrderRecord | null>;
+  // Passe la commande à PAID. renvoie null si elle était déjà payée ou annulée
+  markPaid(id: number): Promise<OrderRecord | null>;
 }
 
 // Ce qu'on charge avec chaque commande : son client et ses lignes (avec le nom du plat)
@@ -107,5 +109,16 @@ create(data: NewOrder): Promise<OrderRecord> {
 
       return tx.order.findUnique({ where: { id }, include: withDetails });
     })
+  }
+
+    // Mise à jour conditionnelle : seulement si la commande est encore impayée et pas annulée
+  async markPaid(id: number): Promise<OrderRecord | null> {
+    const result = await this.prisma.order.updateMany({
+      where: { id, paymentStatus: "UNPAID", status: { not: "CANCELLED" } },
+      data: { paymentStatus: "PAID" },
+    });
+    if (result.count === 0) return null;
+
+    return this.findById(id);
   }
 }

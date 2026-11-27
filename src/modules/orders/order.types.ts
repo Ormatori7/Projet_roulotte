@@ -2,11 +2,13 @@
 
 export const ORDER_STATUSES = ["RECEIVED", "PREPARING", "READY", "PICKED_UP", "CANCELLED"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
+export type PaymentStatus = "UNPAID" | "PAID";
 
 // Une commande telle que le repository la renvoie (avec son client et ses lignes)
 export type OrderRecord = {
     id: number;
     status: OrderStatus;
+    paymentStatus: PaymentStatus;
     note: string | null;
     totalCents: number;
     createdAt: Date;

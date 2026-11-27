@@ -23,6 +23,9 @@ import {
   type OrderRepository,
 } from "./modules/orders/order.repository.js";
 import { OrderService } from "./modules/orders/order.service.js";
+import { createPaymentGateway } from "./modules/payment/payment.factory.js";
+import { PaymentController } from "./modules/payment/payment.controller.js";
+import { PaymentService } from "./modules/payment/payment.service.js";
 import { EventBus } from "./shared/event-bus.js";
 import {
   PrismaUserRepository,
@@ -45,6 +48,7 @@ export type Container = {
   controllers: {
     menu: MenuController;
     orders: OrderController;
+    payment: PaymentController;
   };
 };
 
@@ -59,6 +63,7 @@ export function createContainer(): Container {
   events.on("order.created", () => menu.invalidate());
   events.on("order.updated", () => menu.invalidate());
 
+  // Temps réel : le hub SSE s'abonne lui aussi au bus
   const sse = new SseHub();
   events.on("order.created", (order) => sse.orderCreated(order));
   events.on("order.updated", (order) => sse.orderUpdated(order));
@@ -90,10 +95,18 @@ export function createContainer(): Container {
     events,
   );
 
+  // Provisoire : faux prestataire, remplacé par la Factory à l'étape 8
+  const paymentService = new PaymentService(
+    repositories.orders,    
+    createPaymentGateway(config),
+    events,
+  );
+
   // Les controllers (HTTP) reçoivent les services
   const controllers = {
     menu: new MenuController(menuService),
     orders: new OrderController(orderService),
+    payment: new PaymentController(paymentService),
   };
 
   return { config, auth, events, sse, repositories, controllers };

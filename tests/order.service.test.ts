@@ -17,6 +17,7 @@ const plat = (id: number, priceCents: number, available = true): DishForOrder =>
 const commande = (id: number, userId: number): OrderRecord => ({
   id,
   status: "RECEIVED",
+  paymentStatus: "UNPAID",
   note: null,
   totalCents: 1000,
   createdAt: new Date(),
@@ -32,7 +33,8 @@ function fauxOrders(overrides = {}) {
     create: vi.fn(async (data) => ({ ...commande(1, data.userId), ...data })),
     findById: vi.fn(async () => null),
     list: vi.fn(async () => ({ items: [], total: 0 })),
-    updateStatus: vi.fn(async () => null), 
+    updateStatus: vi.fn(async () => null),
+    markPaid: vi.fn(async () => null),
     ...overrides,
   };
 }

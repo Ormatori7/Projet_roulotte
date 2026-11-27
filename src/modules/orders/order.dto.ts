@@ -5,6 +5,7 @@ export function toOrderDto(order: OrderRecord) {
     return {
         id: order.id,
         status: order.status,
+        paymentStatus: order.paymentStatus,
         note: order.note,
         totalCents: order.totalCents,
         createdAt: order.createdAt.toISOString(),

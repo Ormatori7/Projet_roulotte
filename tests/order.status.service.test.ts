@@ -10,6 +10,7 @@ const dishes = { findByIds: async () => [] };
 const commande = (status: OrderStatus, userId = 7): OrderRecord => ({
   id: 5,
   status,
+  paymentStatus: "UNPAID",
   note: null,
   totalCents: 1000,
   createdAt: new Date(),
@@ -26,6 +27,7 @@ function serviceAvec(existante: OrderRecord) {
     list: vi.fn(),
     findById: vi.fn(async () => existante),
     updateStatus: vi.fn(async (_id: number, _from: OrderStatus, to: OrderStatus) => ({ ...existante, status: to })),
+    markPaid: vi.fn(async () => null),
   };
   return { service: new OrderService(orders, dishes), orders };
 }

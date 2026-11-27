@@ -8,6 +8,7 @@ import { createTestApp } from "./helpers/test-app.js";
 const commande: OrderRecord = {
   id: 12,
   status: "RECEIVED",
+  paymentStatus: "UNPAID",
   note: null,
   totalCents: 1000,
   createdAt: new Date(),
