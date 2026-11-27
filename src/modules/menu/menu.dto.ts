@@ -22,7 +22,7 @@ export function toDishDto(d: DishWithRelations) {
     priceCents: d.priceCents,
     available: d.available,
     stock: d.stock, // null => illimité
-    imageUrl: null,
+    imageUrl: d.imageUrl, // null = pas de photo
     category: { id: d.category.id, name: d.category.name }, // pas de categoryId
     allergens: d.allergens.map((a) => ({ code: a.code, label: a.label })), // pas d'id
   };

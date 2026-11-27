@@ -17,6 +17,7 @@ export function plat(id: number, name: string): DishWithRelations {
     priceCents: 1000,
     available: true,
     stock: null,
+    imageUrl: null,
     categoryId: burgers.id,
     category: burgers,
     allergens: [gluten],
