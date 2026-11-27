@@ -5,10 +5,12 @@ import { createMenuRouter } from "./modules/menu/menu.routes.js";
 import { createOrderRouter } from "./modules/orders/order.routes.js";
 import { errorHandler, notFoundHandler } from "./shared/errors.js";
 import { requestId } from "./shared/request-id";
+import { requestLogger } from "./shared/logger";
 
 export function createApp(container: Container) {
   const app = express();
   app.use(requestId);
+  app.use(requestLogger);
 
   // Sécurité (Helmet, CORS, parseur JSON) : avant toutes les routes
   installSecurity(app, { corsOrigin: container.config.CORS_ORIGIN });
