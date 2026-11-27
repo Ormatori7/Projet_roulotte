@@ -12,6 +12,7 @@ import type { OrderRepository } from "../src/modules/orders/order.repository.js"
 import { OrderService } from "../src/modules/orders/order.service.js";
 import { fakeMenuRepository, plat } from "./helpers/fake-menu.js";
 import { EventBus } from "../src/shared/event-bus"
+import { SseHub } from "../src/modules/events/sse-hub.js";
 
 // . Construit une application de test, sans base de données
 function createTestApp() {
@@ -44,6 +45,7 @@ function createTestApp() {
     config,
     auth: createAuth({ users, jwtSecret: config.JWT_SECRET }),
     events: new EventBus(),
+    sse: new SseHub(),
     repositories: { users, menu, dishes: menu, orders, health: { isDatabaseUp: async () => true } },
     controllers: {
       menu: new MenuController(new MenuService(menu)),
