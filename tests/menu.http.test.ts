@@ -31,6 +31,9 @@ function createTestApp() {
     JWT_SECRET: "secret-de-test-assez-long",
     JWT_EXPIRES_IN: "2h",
     CORS_ORIGIN: "http://localhost:5173",
+    PAYMENT_PROVIDER: "fake" as const,
+    PAYMENT_URL: "http://localhost:4010",
+    PAYMENT_API_KEY: "sk_test_roulotte",
   };
   // Faux repository des commandes : pas utilisé par ces tests
   const orders: OrderRepository = {
