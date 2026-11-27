@@ -1,6 +1,7 @@
 //- Lien entre HTTP (req/res) et le service
 
 import type { RequestHandler } from "express";
+import { AppError } from "../../shared/errors.js";
 import {
   createDishSchema,
   dishIdParamsSchema,
@@ -56,5 +57,20 @@ export class MenuController {
     const { id } = dishIdParamsSchema.parse(req.params);
     await this.service.deleteDish(id); // 404 / 409
     res.status(204).end();
+  };
+
+  // ---------- Palier 3 : photo ----------
+
+  //! PUT /dishes/:id/image → 200 + le plat avec sa nouvelle imageUrl
+  setDishImage: RequestHandler = async (req, res) => {
+    const { id } = dishIdParamsSchema.parse(req.params);
+    if (!req.file) {
+      throw new AppError(
+        400,
+        "VALIDATION_ERROR",
+        "Le fichier image est obligatoire",
+      );
+    }
+    res.json(await this.service.setDishImage(id, req.file.buffer)); // 404 / 415
   };
 }

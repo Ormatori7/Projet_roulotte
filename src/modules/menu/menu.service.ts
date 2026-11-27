@@ -2,7 +2,9 @@
 // => renvoyer catégories/allérgenes/ plat au format demandé (json)
 // => rep 404 si plat n'éxiste pas
 
+import { fileTypeFromBuffer } from "file-type";
 import { AppError } from "../../shared/errors.js";
+import { DiskImageStorage, type ImageStorage } from "./image.storage.js";
 import { toAllergenDto, toCategoryDto, toDishDto } from "./menu.dto.js";
 import type { MenuRepository } from "./menu.repository.js";
 import type {
@@ -11,9 +13,19 @@ import type {
   UpdateDishInput,
 } from "./menu.schemas.js";
 
+//! Types d'image acceptés (type réel → extension du fichier)
+const ALLOWED_IMAGE_TYPES: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+};
+
 export class MenuService {
   // on reçoit le repository (vrai ou faux) de l'extérieur
-  constructor(private readonly menu: MenuRepository) {}
+  constructor(
+    private readonly menu: MenuRepository,
+    private readonly images: ImageStorage = new DiskImageStorage(),
+  ) {}
 
   // toutes les catégories
   async listCategories() {
@@ -79,6 +91,33 @@ export class MenuService {
       );
     }
     await this.menu.deleteDish(id);
+  }
+
+  // ---------- Palier 3 : photo ----------
+
+  // nouvelle photo : plat existant (404), vrai PNG/JPEG/WebP (415), l'ancienne est supprimée
+  async setDishImage(id: number, buffer: Buffer) {
+    const dish = await this.menu.findDishById(id);
+    if (!dish) {
+      throw new AppError(404, "NOT_FOUND", "Plat introuvable");
+    }
+
+    const type = await fileTypeFromBuffer(buffer); // lit les premiers octets
+    const extension = type ? ALLOWED_IMAGE_TYPES[type.mime] : undefined;
+    if (!extension) {
+      throw new AppError(
+        415,
+        "UNSUPPORTED_MEDIA_TYPE",
+        "L'image doit être un PNG, un JPEG ou un WebP",
+      );
+    }
+
+    const imageUrl = await this.images.save(buffer, extension);
+    const updated = await this.menu.updateImageUrl(id, imageUrl);
+    if (dish.imageUrl) {
+      await this.images.remove(dish.imageUrl);
+    }
+    return toDishDto(updated);
   }
 
   // ---------- vérifications réutilisées ----------
